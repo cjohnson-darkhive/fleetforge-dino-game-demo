@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: demo-dino
-          image: images-private.darkhive.ai/demo-dino:1.0.0
+          image: images-private.darkhive.ai/demo-dino:1.0.1
           ports:
             - containerPort: 80
       imagePullSecrets:
