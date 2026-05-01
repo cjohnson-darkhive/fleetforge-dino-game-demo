@@ -1,26 +1,59 @@
+# This defines a Deployment, which ensures your application is running
+# and will automatically restart it if it crashes.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demo-dino
-  namespace: default
+  name: demo-dino                 # Name of the deployment (used to manage it)
+  namespace: default              # Namespace where this app will live
   labels:
-    app: demo-dino
+    app: demo-dino                # Labels are used to group and select resources
 spec:
-  replicas: 1
+  replicas: 1                     # Number of pod instances (1 = single instance)
   selector:
     matchLabels:
-      app: demo-dino
+      app: demo-dino              # Tells the Deployment which pods it owns
   template:
     metadata:
       labels:
-        app: demo-dino
+        app: demo-dino            # Labels applied to the pods (must match selector)
     spec:
+      # hostNetwork allows the container to use the node's network directly.
+      # This means the app will be accessible via the node's IP instead of a ClusterIP.
+      # Useful for simple setups or edge devices, but not typical for large-scale deployments.
       hostNetwork: true
+
+      # Required when using hostNetwork so DNS still works correctly
       dnsPolicy: ClusterFirstWithHostNet
+
       containers:
         - name: demo-dino
+
+          # Container image pulled from the approved private registry.
+          # External registries are NOT currently supported.
           image: images-private.darkhive.ai/demo-dino:1.0.2
+
+          # Port your application listens on inside the container.
+          # This does NOT expose it externally by itself.
           ports:
             - containerPort: 8085
+
+          # Pull in environment variables from shared platform configuration.
+          # The "global-env" ConfigMap is automatically populated by the platform
+          # with useful metadata such as:
+          #   - Fleet information
+          #   - Platform type
+          #   - System identifiers
+          #   - Other runtime context
+          #
+          # Marked optional so the pod can still start even if the ConfigMap
+          # has not yet been created or populated.
+          envFrom:
+            - configMapRef:
+                name: global-env
+                optional: true
+
+      # Required to authenticate to the approved private container registry.
+      # This secret contains credentials used to pull images.
+      # NOTE: Only the approved registry is supported at this time.
       imagePullSecrets:
         - name: regcred
